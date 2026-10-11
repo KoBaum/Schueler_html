@@ -1025,6 +1025,14 @@ var B6 = (function () {
   function scheibe(cx, cy, r, z, n, farbe, nr) {
     var s = '';
     if (n === 1) return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + (z ? farbe : '#fff') + '" stroke="' + C.ink + '" stroke-width="2.5"/>';
+    // viele Stücke (Minuten einer Stunde, 12.10.: 60 oder 240 Trennlinien ergaben eine schwarze Scheibe): Anteil als ein Sektor, Stücke als Striche am Rand wie beim Zifferblatt
+    if (n > 24) {
+      var q = Math.min(1, z / n), b = -Math.PI / 2 + q * 2 * Math.PI;
+      s = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + (q >= 1 ? farbe : '#fff') + '"/>';
+      if (q > 0 && q < 1) s += '<path d="M' + cx + ' ' + cy + ' L' + cx + ' ' + (cy - r) + ' A' + r + ' ' + r + ' 0 ' + (q > 0.5 ? 1 : 0) + ' 1 ' + (cx + r * Math.cos(b)).toFixed(1) + ' ' + (cy + r * Math.sin(b)).toFixed(1) + ' Z" fill="' + farbe + '" stroke="' + C.ink + '" stroke-width="2"/>';
+      if (n <= 60) for (var j = 0; j < n; j++) { var a = -Math.PI / 2 + j * 2 * Math.PI / n, l = j % 5 ? 4 : 8; s += '<line x1="' + (cx + r * Math.cos(a)).toFixed(1) + '" y1="' + (cy + r * Math.sin(a)).toFixed(1) + '" x2="' + (cx + (r - l) * Math.cos(a)).toFixed(1) + '" y2="' + (cy + (r - l) * Math.sin(a)).toFixed(1) + '" stroke="' + C.ink + '" stroke-width="' + (j % 5 ? 0.9 : 1.6) + '"/>'; }
+      return s + '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + C.ink + '" stroke-width="2.5"/>';
+    }
     for (var i = 0; i < n; i++) {
       var a0 = -Math.PI / 2 + i * 2 * Math.PI / n, a1 = -Math.PI / 2 + (i + 1) * 2 * Math.PI / n;
       s += '<path d="M' + cx + ' ' + cy + ' L' + (cx + r * Math.cos(a0)).toFixed(1) + ' ' + (cy + r * Math.sin(a0)).toFixed(1) + ' A' + r + ' ' + r + ' 0 ' + (a1 - a0 > Math.PI ? 1 : 0) + ' 1 ' + (cx + r * Math.cos(a1)).toFixed(1) + ' ' + (cy + r * Math.sin(a1)).toFixed(1) + ' Z" fill="' + (i < z ? farbe : '#fff') + '" stroke="' + C.ink + '" stroke-width="2"/>';
@@ -1040,12 +1048,21 @@ var B6 = (function () {
   /* ---------- Balken (Bruchstreifen): z von n Teilen gefärbt; o.zeilen: mehrere Balken [[z,n,label],…] untereinander */
   function balken(zeilen, o) {
     o = o || {}; var w = o.w || 260, h = 26, s = '', y = 6;
+    // linker Rand nach der längsten Beschriftung (Qualitätscheck 10.10.: „3/4 von 20 €“ war links abgeschnitten)
+    var L = Math.max(50, 12 + 7.6 * Math.max.apply(null, zeilen.map(function (zl) { return String(zl[2] || '').length; })));
     zeilen.forEach(function (zl) {
       var z = zl[0], n = zl[1], bw = w / n;
-      for (var i = 0; i < n; i++) s += '<rect x="' + (50 + i * bw) + '" y="' + y + '" width="' + bw + '" height="' + h + '" fill="' + (i < z ? (zl[3] || C.sky) : '#fff') + '" stroke="' + C.ink + '" stroke-width="1.8"/>';
-      s += T(44, y + 19, zl[2] || '', C.ink, 14, 'end'); y += h + 12;
+      // viele Teile (12.10.: 50 oder 100 Kästchen ergaben einen schwarzen Balken): Anteil als eine Fläche, Teile als Skalenstriche wie beim Lineal
+      if (n > 30) {
+        s += '<rect x="' + L + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#fff"/><rect x="' + L + '" y="' + y + '" width="' + (bw * Math.min(z, n)) + '" height="' + h + '" fill="' + (zl[3] || C.sky) + '"/>';
+        for (var j = 1; j < n; j++) { var gr = n % 10 === 0 && j % (n / 10) === 0; s += '<line x1="' + (L + j * bw) + '" y1="' + (gr ? y : y + h - 7) + '" x2="' + (L + j * bw) + '" y2="' + (y + h) + '" stroke="' + C.ink + '" stroke-width="' + (gr ? 1.3 : 0.8) + '"/>'; }
+        s += '<rect x="' + L + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="none" stroke="' + C.ink + '" stroke-width="1.8"/>' + T(L - 6, y + 19, zl[2] || '', C.ink, 14, 'end'); y += h + 12;
+        return;
+      }
+      for (var i = 0; i < n; i++) s += '<rect x="' + (L + i * bw) + '" y="' + y + '" width="' + bw + '" height="' + h + '" fill="' + (i < z ? (zl[3] || C.sky) : '#fff') + '" stroke="' + C.ink + '" stroke-width="1.8"/>';
+      s += T(L - 6, y + 19, zl[2] || '', C.ink, 14, 'end'); y += h + 12;
     });
-    return svg(s, '0 0 ' + (w + 62) + ' ' + (y + 2), Math.round((w + 62) * 1.25));
+    return svg(s, '0 0 ' + (w + L + 12) + ' ' + (y + 2), Math.round((w + L + 12) * 1.25));
   }
   /* ---------- Glas / Messbecher: z von n Teilstrichen gefüllt (Flüssigkeit), Beschriftung oben */
   function glas(z, n, beschr, farbe) {
