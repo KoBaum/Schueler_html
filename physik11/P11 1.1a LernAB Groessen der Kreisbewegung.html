@@ -169,7 +169,7 @@ ol.dg{margin:3px 0;padding-left:1.3em}ol.dg li{margin:1px 0}
 .block>h2 .tag,.seite .unter{display:none}
 .seite .pruef{display:none}.tippkarten .pruef{display:block}
 /* Lücken sind für Handschrift ausgelegt (Bini, 01.10.: waren nur so breit wie getippter Text). Breite setzt luecken() im Script
-   aus dem Lösungswort (etwa das Doppelte), hier die Mindestmaße und Zeilenhöhen: eine handgeschriebene Zeile braucht rund 8 mm. */
+   aus dem Lösungswort in Handschriftbreite, hier die Mindestmaße und Zeilenhöhen: eine handgeschriebene Zeile braucht rund 8 mm. */
 .seite .gap{min-width:4em;padding:0 .45em;border-bottom:1.5px solid #4a5665}
 body.mathe .seite p:has(.gap),body.mathe .seite .heft p,body.mathe .seite .vorgehen p,body.mathe .seite .beispiel p{line-height:var(--lh,1.9)}
 body.physik .seite p:has(.gap),body.physik .seite .heft p,body.physik .seite .vorgehen p,body.physik .seite .beispiel p{line-height:var(--lh,1.7)}
@@ -177,6 +177,8 @@ body.physik .seite p:has(.gap),body.physik .seite .heft p,body.physik .seite .vo
 .seite .tz svg{overflow:visible}
 .seite .tz:has(.gap,.gap-svg) svg{width:calc(var(--w) * var(--sv,1.3))!important;max-width:100%}
 .seite .tz-node .gap{min-width:2.4em;padding:0 .3em}
+.seite .gap{max-width:100%}
+.seite .gap.mehrzeilig{display:block;min-width:0!important;width:100%;padding:0 .3em;border-bottom:0;line-height:8mm;white-space:normal;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(8mm - 1.5px),#4a5665 calc(8mm - 1.5px),#4a5665 8mm);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .seite foreignObject{overflow:visible}
 /* Lösungsebene (Bini, 12.10.2026: „nicht nur die Lücken aufdecken, sondern auch alle Lösungen hinschreiben“, in Handschrift):
    nur am Bildschirm, im Druck nie. Lösungen stehen in den Karo-Feldern (.karo>.loes), auf Schreiblinien aus Unterstrichen (.lw>.loes),
@@ -269,21 +271,44 @@ Ein Umlauf dauert dann <span class="m">T</span> = <span class="gap"><span class=
    Im Druck gilt zoom:1 (CSS), dort bleibt alles exakt A4. */
 function einpassenLA(){var w=document.documentElement.clientWidth||innerWidth,z=Math.min(1,(w-16)/794);document.querySelectorAll('.seite').forEach(function(s){s.style.zoom=z<0.999?z.toFixed(3):'';});}
 einpassenLA();addEventListener('resize',einpassenLA);addEventListener('orientationchange',function(){setTimeout(einpassenLA,200);});
-/* Lücken für Handschrift: so breit wie das Doppelte des Lösungsworts (in Zeichnungen höchstens das 1,5-Fache), Zeilen mit Lücken höher (--lh).
-   Passt eine Seite dadurch nicht mehr auf A4, wird schrittweise enger gesetzt, bis sie passt (Maße in em, damit es auch bei verkleinerter Seite stimmt). */
-var SCHRITTE=[{lh:0,f:2.0,sv:1.3},{lh:1.7,f:1.8,sv:1.2},{lh:1.55,f:1.6,sv:1.1},{lh:1.45,f:1.4,sv:1},{lh:1.4,f:1.2,sv:1},{lh:1.35,f:1.0,sv:1},{lh:1.35,f:1.0,sv:1,hs:.97}];   /* letzter Schritt: Hefteintrag 3 % kleiner, falls eine Schrift breiter ist als Segoe UI (z. B. Liberation Sans in der Cloud) und ein Absatz sonst umbricht */
+/* Lücken für Handschrift (Bini, 01.10. und 12.10.2026: „konkrete Beispiele konnte bei weitem nicht in die Lücke geschrieben werden“):
+   Jede Lücke, auch \leerzeile (.breit), ist so breit wie das Lösungswort in Schülerhandschrift: gemessen in der Handschrift HandUA
+   mit 31 px (rund 3,3 mm je Buchstabe, unabhängig von der Druckschrift drumherum, auch in Tabellen), dazu 16 px (4 mm) Luft; in Zeichnungen relativ zur Zeichnung. Diese Breite wird nie unterschritten.
+   Passt eine Seite dadurch nicht auf A4, werden nur Zeilenabstand (--lh), Zeichnungsmaßstab (--sv) und zuletzt der Hefteintrag (--hs)
+   enger gesetzt; passt sie dann immer noch nicht, steht data-zu-voll an der Seite (test_la.py und test_kapitel.py melden das).
+   Ausnahme: Schreibzeilen mit fester Breite (\Schreibzeile, min-width in % im HTML). Maße in em, damit es auch bei verkleinerter Seite stimmt. */
+var HAND=31,LUFT=16,SCHRITTE=[{lh:0,sv:1.3},{lh:1.7,sv:1.2},{lh:1.55,sv:1.1},{lh:1.45,sv:1},{lh:1.4,sv:1},{lh:1.35,sv:1},{lh:1.35,sv:1,hs:.97}];
+function handBreite(g){var c=handBreite.c||(handBreite.c=document.createElement('canvas').getContext('2d')),fs=parseFloat(getComputedStyle(g).fontSize)||14,svg=!!g.closest('foreignObject');
+  c.font=(svg?fs*HAND*1.1/14.5:HAND)+'px HandUA';return (c.measureText(g.textContent.replace(/\s+/g,' ').trim()).width+(svg?fs*.6:g.closest('td,th')?LUFT/2:LUFT))/fs;}
+function lueckenSetzen(s){
+  s.querySelectorAll('.gap').forEach(function(g){
+    var fest=/%/.test(g.dataset.stil||(g.dataset.stil=g.getAttribute('style')||'-')),svg=!!g.closest('foreignObject'),fs=parseFloat(getComputedStyle(g).fontSize)||14;
+    g.classList.remove('mehrzeilig');g.style.height='';
+    var em=Math.max(svg?2.4:3.2,handBreite(g));if(!fest)g.style.minWidth=em.toFixed(2)+'em';delete g.dataset.gekappt;
+    if(svg){   /* in Zeichnungen: nicht über den Rand des Kastens (Hefteintrag bzw. Block) hinaus; dann kürzer als Handschrift (data-gekappt) */
+      var k=(g.closest('.heft,.block')||s).getBoundingClientRect(),r=g.getBoundingClientRect(),px=r.width/em,ueber=Math.max(k.left+6-r.left,r.right-(k.right-6),0);
+      if(ueber>0&&px>0){g.style.minWidth=Math.max(2.4,em-2*ueber/px).toFixed(2)+'em';g.dataset.gekappt='1';}
+      return;}
+    /* länger als die Zeile: so viele Schreiblinien (je 8 mm), wie die Antwort in Handschrift braucht */
+    var box=g.parentNode.closest('p,td,th,li,div'),frei=box?box.clientWidth-8:9999,noetig=em*fs;
+    if(noetig>frei){var n=Math.ceil(noetig/frei);g.classList.add('mehrzeilig');g.style.height=(n*8)+'mm';}});
+  /* Tabellen nicht breiter als ihr Kasten: sonst die Lücken darin gleichmäßig schmaler (data-gekappt) */
+  s.querySelectorAll('table').forEach(function(t){var k=(t.parentNode.closest('.heft,.block')||s).getBoundingClientRect(),gs=t.querySelectorAll('.gap');
+    for(var j=0;j<12&&gs.length&&t.getBoundingClientRect().right>k.right-4;j++)gs.forEach(function(g){g.style.minWidth=(parseFloat(g.style.minWidth)*0.93).toFixed(2)+'em';g.dataset.gekappt='1';});});
+  /* leere Tabellenzeilen (zum Eintragen; versteckte Lösungen zählen nicht) bekommen Schreibhöhe */
+  s.querySelectorAll('tr').forEach(function(tr){var td=[].slice.call(tr.children,1);
+    if(td.length&&td.every(function(c){return c.tagName==='TD'&&![].some.call(c.childNodes,function(n){return n.nodeType===3?n.textContent.trim():!(n.classList&&n.classList.contains('loes'));});})&&tr.getBoundingClientRect().height<20)td.forEach(function(c){c.style.height='7.5mm';});});}
 function luecken(){
-  document.querySelectorAll('.seite .gap').forEach(function(g){var fs=parseFloat(getComputedStyle(g).fontSize)||14,r=document.createRange();r.selectNodeContents(g);g.dataset.nat=(r.getBoundingClientRect().width/fs).toFixed(3);});
-  document.querySelectorAll('.seite').forEach(function(s){
-    for(var i=0;i<SCHRITTE.length;i++){var st=SCHRITTE[i];
+  document.querySelectorAll('.seite').forEach(function(s){var passt=false;
+    for(var i=0;i<SCHRITTE.length&&!passt;i++){var st=SCHRITTE[i];
       if(st.lh)s.style.setProperty('--lh',st.lh);else s.style.removeProperty('--lh');
       s.style.setProperty('--sv',st.sv);
       if(st.hs)s.style.setProperty('--hs',st.hs);else s.style.removeProperty('--hs');
-      s.querySelectorAll('.gap').forEach(function(g){if(g.classList.contains('breit'))return;var svg=!!g.closest('foreignObject'),f=svg?Math.min(st.f,1.5):st.f;
-        g.style.minWidth=Math.max(svg?2.4:3.2,(+g.dataset.nat)*f+(svg?.6:.9)).toFixed(2)+'em';});
+      var z=s.style.zoom;s.style.zoom='';lueckenSetzen(s);
       /* passt: Seite nicht höher als A4 und der letzte Block endet höchstens bei 281 mm (darunter steht die Fußzeile) */
-      var z=s.style.zoom;s.style.zoom='';var r0=s.getBoundingClientRect(),h=r0.height,bl=s.querySelectorAll(':scope>.block'),lb=bl.length?bl[bl.length-1].getBoundingClientRect().bottom-r0.top:0;s.style.zoom=z;
-      if(h<=1123&&lb<=1062)break;}});}
+      var r0=s.getBoundingClientRect(),h=r0.height,bl=s.querySelectorAll(':scope>.block'),lb=bl.length?bl[bl.length-1].getBoundingClientRect().bottom-r0.top:0;s.style.zoom=z;
+      passt=h<=1123&&lb<=1062;}
+    if(passt)delete s.dataset.zuVoll;else{s.dataset.zuVoll='1';console.warn('Lern-AB: Seite passt mit Handschrift-Lücken nicht auf A4');}});}
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(luecken);
 document.addEventListener('click',function(e){var g=e.target.closest('.gap,.gap-svg');if(g)g.classList.toggle('shown');});
 document.addEventListener('click',function(e){var k=e.target.closest('.karo');if(k&&k.querySelector(':scope>.loes')){k.classList.toggle('auf');loesPassen();}});
