@@ -2430,6 +2430,8 @@ AUFGABEN = LK_A;
    pflicht:1,2 (Pflicht dieser Teile gelöst, wie die Freigabe der Level in ab_engine.js) · wahl:1,2,… (in einem Teil Pflicht und zwei Level-Aufgaben) */
 (function () {
   var C = window.LK, N = C.titel.length, AB = document.body.dataset.ab, KEY = 'lk-' + AB, EKEY = 'ua-ab2-' + AB;
+  /* Physik (lernkarte_p.py, 13.10.2026): Jgst. 11 wird gesiezt, die Stufen heißen dort „Weg“ statt „Level“ */
+  var SIE = !!C.sie, LV = C.stufe || 'Level';
   var ST = { cur: 1, open: 1, d: {} };
   try { var x = JSON.parse(localStorage.getItem(KEY) || 'null'); if (x && x.d) ST = x; } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch (e) {} }
@@ -2533,7 +2535,7 @@ AUFGABEN = LK_A;
     if (ST.d['fest-' + k]) { nach.hidden = false; r.className = 'rueck gut'; r.textContent = 'Festgehalten ✓'; }
     ta.addEventListener('input', function () { ST.d['text-' + k] = ta.value; save(); });
     $('.lk-fest', v).addEventListener('click', function () {
-      if (ta.value.trim().length < 3) { r.className = 'rueck nein'; r.textContent = 'Schreib zuerst deine Antwort auf.'; return; }
+      if (ta.value.trim().length < 3) { r.className = 'rueck nein'; r.textContent = SIE ? 'Schreiben Sie zuerst Ihre Antwort auf.' : 'Schreib zuerst deine Antwort auf.'; return; }
       ST.d['fest-' + k] = true; ST.d['text-' + k] = ta.value; nach.hidden = false;
       r.className = 'rueck gut'; r.textContent = 'Festgehalten ✓'; pruefeAlles();
     });
@@ -2593,9 +2595,9 @@ AUFGABEN = LK_A;
     var zu = $('.zurueck', bl), we = $('.vor', bl), wo = $('.wo', bl), letzte = i >= ks.length - 1, nT = karten(x, 'T').length;
     zu.disabled = b === 'P' && i === 0;
     we.disabled = b === 'T' || (b === 'L' && letzte && !nT);
-    we.textContent = b === 'P' && letzte ? 'Weiter zum Level ▶' : b === 'W' ? 'Los geht’s ▶' : b === 'L' && letzte ? 'Mehr üben ▶' : 'Weiter ▶';
-    wo.innerHTML = b === 'P' ? 'Pflicht: Aufgabe ' + (i + 1) + ' von ' + ks.length : b === 'W' ? 'Level wählen'
-      : b === 'L' ? ((window.AB_STUFEN || {})[stufe(x)] || 'Level') + ': Aufgabe ' + (i + 1) + ' von ' + ks.length + '<br><button type="button" class="wechseln">Level wechseln</button>'
+    we.textContent = b === 'P' && letzte ? 'Weiter zum ' + LV + ' ▶' : b === 'W' ? 'Los geht’s ▶' : b === 'L' && letzte ? 'Mehr üben ▶' : 'Weiter ▶';
+    wo.innerHTML = b === 'P' ? 'Pflicht: Aufgabe ' + (i + 1) + ' von ' + ks.length : b === 'W' ? LV + ' wählen'
+      : b === 'L' ? ((window.AB_STUFEN || {})[stufe(x)] || LV) + ': Aufgabe ' + (i + 1) + ' von ' + ks.length + '<br><button type="button" class="wechseln">' + LV + ' wechseln</button>'
       : 'Mehr üben';
     var wb = $('.wechseln', wo); if (wb) wb.addEventListener('click', function () { Z.b = 'W'; blatt(sec); });
     var e = eng(), id = ks.length ? ks[i].id.slice(2) : null;
