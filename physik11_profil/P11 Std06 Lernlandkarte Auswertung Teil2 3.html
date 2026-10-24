@@ -639,6 +639,7 @@ function MC(o) {
   function misch(n) { var a = []; for (var i = 0; i < n; i++) a.push(i); for (var j = n - 1; j > 0; j--) { var k = Math.floor(Math.random() * (j + 1)), t = a[j]; a[j] = a[k]; a[k] = t; } return a; }
   function fall(p) { return o.faelle[p.i]; }
   var F0 = o.faelle[0].fragen;
+  var sie = typeof document !== 'undefined' && document.body && document.body.dataset.anrede === 'sie';   // Jgst. 11 siezen (24.10.2026)
   var t = {
     id: o.id, teil: o.teil, stufe: o.stufe, niveau: o.niveau, titel: o.titel, papier: o.papier, startFest: o.startFest, festOnly: o.faelle.length === 1 && !o.mischen, serie: o.serie,
     fest: { i: 0, perm: F0.map(function (f) { return f.opt.map(function (_, j) { return j; }); }) },
@@ -647,10 +648,10 @@ function MC(o) {
     bild: function (p) { var b = fall(p).bild || o.bild || ''; return typeof b === 'function' ? b(p) : b; },
     text: function (p) { return fall(p).text; },
     felder: F0.map(function (f0, k) {
-      return { typ: 'wahl', label: (o.labels || [])[k] || (F0.length > 1 ? String.fromCharCode(97 + k) + ')' : 'Deine Wahl:'),
+      return { typ: 'wahl', label: (o.labels || [])[k] || (F0.length > 1 ? String.fromCharCode(97 + k) + ')' : (sie ? 'Ihre Wahl:' : 'Deine Wahl:')),
         optionen: f0.opt.map(function (_, j) { return function (p) { return fall(p).fragen[k].opt[p.perm[k][j]]; }; }),
         richtig: function (p) { return p.perm[k].indexOf(0); },
-        fehler: f0.opt.reduce(function (acc, _, j) { acc[j] = function (p) { var fe = fall(p).fragen[k].fe || []; return fe[p.perm[k][j]] || 'Das passt noch nicht. Lies den Merkkasten noch einmal.'; }; return acc; }, {}) };
+        fehler: f0.opt.reduce(function (acc, _, j) { acc[j] = function (p) { var fe = fall(p).fragen[k].fe || []; return fe[p.perm[k][j]] || (sie ? 'Das passt noch nicht. Lesen Sie den Merkkasten noch einmal.' : 'Das passt noch nicht. Lies den Merkkasten noch einmal.'); }; return acc; }, {}) };
     }),
     tipps: [function (p) { return (fall(p).tipps || o.tipps)[0]; }, function (p) { return (fall(p).tipps || o.tipps)[1]; }],
     loesung: function (p) { return fall(p).loes; }

@@ -26,6 +26,8 @@ KAPITEL_NAMEN = {
     "Kap2_Termumformungen": "2 Termumformungen",
     "Kap1_Mechanische_Energie": "1 Mechanische Energie",
     "Kap1_Kreisbewegungen": "1 Kreisbewegungen",
+    "Kap2_Schwingungen_und_Wellen": "2 Schwingungen und Wellen",
+    "Kap2_Elektrische_Energie": "2 Elektrische Energie",
     "Kap4-1_Methode_der_kleinen_Schritte": "4.1 Methode der kleinen Schritte",
 }
 SONDER = {"seminar": "Seminar-Demo"}
