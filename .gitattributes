@@ -1,2 +1,20 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Zeilenenden: überall LF, wie build.py, bundle.py und uebertragen.py schreiben (26.10.2026).
+# GitHub Desktop setzt systemweit core.autocrlf=true; ohne diese Datei checkt git Textdateien mit CRLF aus,
+# und jeder Abgleich zwischen Hauptordner und Klon findet Unterschiede, die keine sind.
+* text=auto eol=lf
+
+# Binärdateien nie anfassen
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.mp3 binary
+*.mp4 binary
+*.docx binary
+*.xlsx binary
+*.pptx binary

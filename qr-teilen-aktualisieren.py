@@ -24,6 +24,7 @@ KAPITEL_NAMEN = {
     "Kap1_Brueche_und_Dezimalbrueche": "1 Brüche und Dezimalbrüche",
     "Kap1_Terme": "1 Terme",
     "Kap2_Termumformungen": "2 Termumformungen",
+    "Kap2_Addition_und_Subtraktion_von_Bruechen": "2 Addition und Subtraktion von Brüchen",
     "Kap1_Mechanische_Energie": "1 Mechanische Energie",
     "Kap1_Kreisbewegungen": "1 Kreisbewegungen",
     "Kap2_Schwingungen_und_Wellen": "2 Schwingungen und Wellen",
