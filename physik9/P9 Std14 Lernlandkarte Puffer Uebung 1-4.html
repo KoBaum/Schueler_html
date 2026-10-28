@@ -1630,7 +1630,7 @@ AUFGABEN = LK_A;
       }
       if (b.dezimal && f.form !== 'dezimal' && !f.dezimalOk) return { ok: false, form: true, t: 'Der Wert stimmt. Gefragt ist aber ein Bruch.' };
       var gk = MB.ggT(b.z, b.n) === 1;
-      if (f.form === 'gemischt' && Math.abs(b.z) > b.n && !b.gemischt) return { ok: false, form: true, t: 'Der Wert stimmt. Schreibe ihn noch als gemischte Zahl.' };
+      if (f.form === 'gemischt' && Math.abs(b.z) > b.n && !b.gemischt && !b.ganzzahl) return { ok: false, form: true, t: 'Der Wert stimmt. Schreibe ihn noch als gemischte Zahl.' };
       if (f.form === 'unecht' && b.gemischt) return { ok: false, form: true, t: 'Der Wert stimmt. Gefragt ist aber ein unechter Bruch (ohne Ganze).' };
       if ((f.form === 'gekuerzt' || f.form === 'gemischt') && (!gk || (b.gemischt && MB.ggT(b.rz, b.n) !== 1))) return { ok: false, form: true, t: 'Der Wert stimmt, aber du kannst noch kürzen.' };
       if (f.nenner && b.n !== f.nenner(p)) return { ok: false, form: true, t: 'Der Wert stimmt, aber der Nenner soll ' + f.nenner(p) + ' sein.' };
