@@ -76,6 +76,9 @@ pfade = sorted(
 eintraege, geraten = [], []
 for pfad in pfade:
     ordner, name = pfad.split("/", 1)
+    if re.match(r"\S+ (SA|KA|Ex) \d", name):   # Leistungsnachweise, z. B. "M6 SA 1 Jeopardy.html"
+        eintraege.append([pfad, "Schulaufgaben"])
+        continue
     kap = karte.get((ordner, name)) or SONDER.get(ordner) or alt.get(pfad)
     if not kap:
         m = re.match(r"\S+ (\d+)\.", name)
@@ -94,7 +97,7 @@ neu, n = re.subn(
 )
 if n != 1:
     raise SystemExit("Dateiliste in qr-teilen.html nicht gefunden")
-tool.write_text(neu, encoding="utf-8")
+tool.write_text(neu, encoding="utf-8", newline="\n")
 print(f"{len(eintraege)} Dateien eingetragen")
 for g in geraten:
     print(f"  Kapitel geraten: {g}")
