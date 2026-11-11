@@ -30,6 +30,8 @@ KAPITEL_NAMEN = {
     "Kap2_Schwingungen_und_Wellen": "2 Schwingungen und Wellen",
     "Kap2_Elektrische_Energie": "2 Elektrische Energie",
     "Kap4-1_Methode_der_kleinen_Schritte": "4.1 Methode der kleinen Schritte",
+    "Kap3_Symmetrie": "3 Symmetrie",
+    "Kap4-2_Photovoltaik": "4.2 Photovoltaik",
 }
 SONDER = {"seminar": "Seminar-Demo"}
 
