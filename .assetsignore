@@ -1,0 +1,8 @@
+# Dateien, die nicht öffentlich ausgeliefert werden sollen
+.git
+.gitattributes
+.assetsignore
+wrangler.jsonc
+*.py
+node_modules
+.wrangler
