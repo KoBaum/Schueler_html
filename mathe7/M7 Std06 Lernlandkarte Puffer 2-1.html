@@ -1355,16 +1355,18 @@ var B8 = (function () {
   }
   /* Rechnung einer Figur im Heft: zeilen = ['6b+4-2b', '=10b-2b', '=8b'] (Maschinenschreibweise oder Text), o.name, o.rot = Index der Zeile mit dem Fehler, o.text = true: Zeilen sind Text */
   function heft(zeilen, o) {
-    o = o || {}; var s = '', W = 300, zh = 30, y0 = o.name ? 40 : 18;
-    var H = y0 + zeilen.length * zh + 14;
-    s += '<rect x="8" y="6" width="' + (W - 16) + '" height="' + (H - 10) + '" rx="10" fill="#fffdf7" stroke="' + C.soft + '" stroke-width="1.5"/>';
-    for (var i = 0; i <= zeilen.length; i++) s += '<line x1="18" y1="' + (y0 + i * zh + 8) + '" x2="' + (W - 18) + '" y2="' + (y0 + i * zh + 8) + '" stroke="#c9d8ee" stroke-width="1.2"/>';
-    s += '<line x1="40" y1="8" x2="40" y2="' + (H - 6) + '" stroke="#efb3b3" stroke-width="1.5"/>';
-    if (o.name) s += T(50, 30, o.name + ' rechnet:', C.soft, 14);
+    /* 16.11.2026 (Bini, M7 2.2b Teil 2: grafische Fehler): Zeilen standen auf dem oberen Rahmen bzw. auf „… rechnet:“.
+       Jetzt: Name in einer eigenen Kopfzeile, jede Zeile sitzt auf ihrer Heftlinie (Grundlinie 7 px darüber), keine leere Zeile am Ende. */
+    o = o || {}; var s = '', W = 300, zh = 36, y0 = o.name ? 36 : 10;
+    var H = y0 + zeilen.length * zh + 16;
+    s += '<rect x="8" y="6" width="' + (W - 16) + '" height="' + (H - 12) + '" rx="10" fill="#fffdf7" stroke="' + C.soft + '" stroke-width="1.5"/>';
+    for (var i = 1; i <= zeilen.length; i++) s += '<line x1="18" y1="' + (y0 + i * zh) + '" x2="' + (W - 18) + '" y2="' + (y0 + i * zh) + '" stroke="#c9d8ee" stroke-width="1.2"/>';
+    s += '<line x1="40" y1="8" x2="40" y2="' + (H - 8) + '" stroke="#efb3b3" stroke-width="1.5"/>';
+    if (o.name) s += T(50, 28, o.name + ' rechnet:', C.soft, 14);
     zeilen.forEach(function (z, i) {
-      var t = o.text ? z : zs(z), rot = o.rot === i;
-      s += T(50, y0 + i * zh + 2, t, rot ? C.red : C.ink, G(t, 18, W - 80));
-      if (rot) s += T(W - 22, y0 + i * zh + 2, '?', C.red, 20, 'end');
+      var t = o.text ? z : zs(z), rot = o.rot === i, yb = y0 + (i + 1) * zh - 7;
+      s += T(50, yb, t, rot ? C.red : C.ink, G(t, 18, W - (rot ? 100 : 80)));
+      if (rot) s += T(W - 24, yb, '?', C.red, 20, 'end');
     });
     return svg(s, '0 0 ' + W + ' ' + H, 420);
   }
