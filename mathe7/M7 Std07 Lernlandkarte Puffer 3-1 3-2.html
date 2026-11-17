@@ -318,6 +318,9 @@ body.mathe .optionen button svg{width:250px;max-width:100%;height:auto;display:b
 .st-kopf{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .phase{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 12px;background:var(--ph);color:#1d2733}
 .st-kopf .zeit{font-size:14px;color:var(--muted)}
+.st-kopf .uhr{font-size:13px;line-height:1.3;color:#6b5d4d;background:#efe6d6;border-radius:999px;padding:2px 10px}   /* Zeit je Station (16.11.2026) */
+.st-kopf .uhr.bald{background:#f7e3a3;color:#5c4a12}
+.st-kopf .uhr.drueber{background:#f6c9b0;color:#7a2e12;font-weight:600;border-radius:12px}
 .station h2{font-family:var(--hand);font-weight:400;font-size:38px;color:#2f5f9e;margin:4px 0 2px;line-height:1.1;outline:none}
 .st-ziel{color:var(--ink-soft);font-size:16px;margin:0 0 10px}
 .impuls{display:flex;align-items:flex-end;gap:6px;margin:10px 0 14px}
@@ -369,7 +372,7 @@ body.einzeln .lk-blaettern{display:flex;justify-content:space-between;align-item
 .schalter-zeile{display:flex;justify-content:space-between;gap:10px;margin:6px 2px 0}
 .schalter-zeile button{font:inherit;font-size:12px;background:none;border:0;color:var(--muted);opacity:.7;cursor:pointer;min-height:40px;padding:0 4px}
 .schalter-zeile button:hover{opacity:1;text-decoration:underline}
-@media print{.schalter-zeile,.lk-blaettern{display:none!important}}
+@media print{.schalter-zeile,.lk-blaettern,.st-kopf .uhr{display:none!important}}
 .fuss button{font:inherit;font-size:13px;background:none;border:0;color:#2f5f9e;text-decoration:underline;cursor:pointer;min-height:44px}
 @media (max-width:560px){.station h2{font-size:32px}.blase{font-size:21px}.impuls img{height:120px}.ort .ort-titel{font-size:26px}.ort .ort-min{display:none}}
 </style></head>
@@ -2742,13 +2745,40 @@ AUFGABEN = LK_A;
   window.addEventListener('beforeprint', function () { B.dataset.warEinzeln = B.classList.contains('einzeln') ? '1' : ''; B.classList.remove('einzeln'); });
   window.addEventListener('afterprint', function () { if (B.dataset.warEinzeln) B.classList.add('einzeln'); });
 
+  /* =================================================================== Zeit je Station (Bini 16.11.2026: Timerhinweise für die SuS)
+     Gezählt wird nur, solange die Station angezeigt wird, noch nicht geschafft ist und die Seite sichtbar ist (Stand in ST.t, Sekunden).
+     Anzeige oben in der Station: grau, ab 80 % der geplanten Zeit gelb, danach Pfirsich mit Hinweis auf Hilfe. */
+  if (!ST.t) ST.t = {};
+  $$('.station').forEach(function (sec) {
+    var k = $('.st-kopf', sec); if (!k) return;
+    var u = document.createElement('span'); u.className = 'uhr'; u.setAttribute('aria-live', 'polite'); k.appendChild(u);
+  });
+  function uhren() {
+    $$('.station').forEach(function (sec) {
+      var n = +sec.dataset.n, u = $('.st-kopf .uhr', sec); if (!u) return;
+      var plan = +C.min[n - 1] || 0, m = Math.floor((ST.t[n] || 0) / 60), fertig = erledigt(n), t, art = '';
+      if (!plan) { u.hidden = true; return; }
+      if (fertig) t = '✓ ' + (m < 1 ? 'in unter 1 min' : 'in ' + m + ' min') + ' geschafft';
+      else if (m >= plan) { art = 'drueber'; t = '⏱ ' + m + ' von ' + plan + ' min: ' + (SIE ? 'Holen Sie sich Hilfe (Tipp, Nachbar, Lehrkraft) und gehen Sie dann weiter.' : 'Hol dir Hilfe (Tipp, Nachbar, Lehrkraft) und geh dann weiter.'); }
+      else if (plan >= 3 && m >= Math.ceil(plan * 0.8)) { art = 'bald'; t = '⏱ ' + m + ' von ' + plan + ' min: ' + (SIE ? 'Kommen Sie langsam zum Ende.' : 'Komm langsam zum Ende.'); }
+      else t = '⏱ ' + m + ' von ' + plan + ' min';
+      u.className = 'uhr' + (art ? ' ' + art : ''); u.textContent = t;
+    });
+  }
+  var tick = Date.now();
+  setInterval(function () {
+    var jetzt = Date.now(), d = Math.min(10, (jetzt - tick) / 1000); tick = jetzt;   // höchstens 10 s je Schritt: Ruhezustand zählt nicht
+    if (document.visibilityState === 'hidden' || erledigt(ST.cur)) { uhren(); return; }
+    ST.t[ST.cur] = (ST.t[ST.cur] || 0) + d; save(); uhren();
+  }, 5000);
+
   /* =================================================================== Start */
   $('#neu').addEventListener('click', function () {
     if (!confirm('Wirklich alles löschen und von vorn beginnen?')) return;
     try { Object.keys(localStorage).forEach(function (k) { if (k === KEY || k.indexOf(EKEY) === 0) localStorage.removeItem(k); }); } catch (e) {}
     location.href = location.pathname;
   });
-  karte(); pruefeAlles();
+  karte(); pruefeAlles(); uhren();
   zeige(Math.min(ST.cur || 1, offen()), false);
   setInterval(pruefeAlles, 1200);
   document.addEventListener('click', function () { setTimeout(pruefeAlles, 50); });
