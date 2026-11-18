@@ -92,7 +92,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 "use strict";
 var FILES=JSON.parse(document.getElementById('dateien').textContent);
 var GH_BASE="https://kobaum.github.io/Schueler_html/";
-var CF_BASE="https://schueler-html.boni108108.workers.dev/";
+var CF_BASE="https://schueler-html.kobaum.workers.dev/";
+/* Wer schon die alte Cloudflare-Adresse gespeichert hat, bekommt die neue */
+try{if(localStorage.getItem("qr_base")==="https://schueler-html.boni108108.workers.dev/")localStorage.setItem("qr_base",CF_BASE)}catch(e){}
 var DEFAULT_BASE=GH_BASE;
 var $=function(id){return document.getElementById(id)};
 
