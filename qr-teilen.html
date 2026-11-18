@@ -8,6 +8,10 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
 header{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--card);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 h1{font-size:18px;margin:0 8px 0 0}
+.quelle{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.sw{font:inherit;font-size:14px;padding:7px 14px;border:0;background:var(--bg);color:var(--ink);cursor:pointer}
+.sw+.sw{border-left:1px solid var(--line)}
+.sw[aria-pressed=true]{background:var(--acc);color:var(--acc-ink)}
 .base{display:flex;gap:6px;align-items:center;flex:1;min-width:260px}
 .base label{color:var(--mute);font-size:13px;white-space:nowrap}
 input[type=text],input[type=search]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
@@ -30,6 +34,7 @@ main{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:16px;padding
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;color:var(--mute);font-size:13px}
 a.btn,button.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 12px;font:inherit;cursor:pointer}
 button.btn.p{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+button.btn.tg[aria-pressed=true]{background:var(--sel);border-color:var(--acc)}
 button.btn:disabled{opacity:.45;cursor:default}
 .view{position:sticky;top:12px;align-self:start}
 .qrbox{background:#fff;border-radius:10px;padding:10px;width:min(100%,380px);margin:8px auto}
@@ -59,6 +64,7 @@ button.btn:disabled{opacity:.45;cursor:default}
 </style></head><body>
 <header>
   <h1>QR-Codes teilen</h1>
+  <div class="quelle" role="group" aria-label="Links über"><button class="sw" id="swGh" type="button">GitHub</button><button class="sw" id="swCf" type="button">Cloudflare</button></div>
   <div class="base"><label for="base">Basis-Adresse</label><input type="text" id="base" spellcheck="false"></div>
 </header>
 <main>
@@ -68,7 +74,7 @@ button.btn:disabled{opacity:.45;cursor:default}
       <div class="ebene">Klasse</div><div class="kacheln" id="fk"></div>
       <div id="kapwahl"><div class="ebene">Kapitel</div><div class="kacheln" id="fc"></div></div>
     </div>
-    <div class="bar"><span id="count"></span><button class="btn" id="selAll">Alle sichtbaren wählen</button><button class="btn" id="selNone">Auswahl leeren</button></div>
+    <div class="bar"><span id="count"></span><button class="btn tg" id="llk" type="button">+ Lernlandkarten</button><button class="btn" id="selAll">Alle sichtbaren wählen</button><button class="btn" id="selNone">Auswahl leeren</button></div>
     <div id="list"></div>
   </section>
   <section class="panel view" id="view"></section>
@@ -85,7 +91,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 (function(){
 "use strict";
 var FILES=JSON.parse(document.getElementById('dateien').textContent);
-var DEFAULT_BASE="https://kobaum.github.io/Schueler_html/";
+var GH_BASE="https://kobaum.github.io/Schueler_html/";
+var CF_BASE="https://schueler-html.boni108108.workers.dev/";
+var DEFAULT_BASE=GH_BASE;
 var $=function(id){return document.getElementById(id)};
 
 /* ---------- Daten aufbereiten ---------- */
@@ -115,15 +123,17 @@ var DIRS=Object.keys(KLASSEN_INFO).filter(function(d){return ITEMS.some(function
 ITEMS.forEach(function(i){if(DIRS.indexOf(i.dir)<0)DIRS.push(i.dir)});
 function klasseName(d){return KLASSEN_INFO[d]?KLASSEN_INFO[d][0]:(d||"Allgemein")}
 function kapNr(k){var m=k.match(/^(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):1e9}
+/* Lernlandkarten nur auf Knopfdruck (Bini, 18.11.2026) */
+function pool(){return ITEMS.filter(function(i){return st.llk||i.art!=="llk"})}
 function kapitel(d){
   var ks=[];ITEMS.forEach(function(i){if(i.dir===d&&ks.indexOf(i.kap)<0)ks.push(i.kap)});
   return ks.sort(function(a,b){return kapNr(a)-kapNr(b)||a.localeCompare(b)});
 }
-function anzahl(f){return ITEMS.filter(f).length}
+function anzahl(f){return pool().filter(f).length}
 
 /* ---------- Zustand ---------- */
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
-var st={q:"",k:store("qr_k"),c:store("qr_c"),cur:null,sel:{},sheet:false};
+var st={q:"",k:store("qr_k"),c:store("qr_c"),cur:null,sel:{},sheet:false,llk:store("qr_llk")==="1"};
 if(DIRS.indexOf(st.k)<0){st.k=null;st.c=null}
 if(st.k&&kapitel(st.k).indexOf(st.c)<0)st.c=null;
 
@@ -134,10 +144,18 @@ function guessBase(){
 }
 var base=store("qr_base")||guessBase();
 $("base").value=base;
+function schalter(){
+  $("swGh").setAttribute("aria-pressed",String(base===GH_BASE));
+  $("swCf").setAttribute("aria-pressed",String(base===CF_BASE));
+}
+function setBase(b){base=b;$("base").value=b;store("qr_base",b);schalter();render()}
+$("swGh").onclick=function(){setBase(GH_BASE)};
+$("swCf").onclick=function(){setBase(CF_BASE)};
+schalter();
 $("base").addEventListener("input",function(){
   base=this.value.trim();
   if(base&&base.slice(-1)!=="/")base+="/";
-  store("qr_base",base);render();
+  store("qr_base",base);schalter();render();
 });
 function urlOf(it){return base+it.path.split("/").map(encodeURIComponent).join("/")}
 
@@ -173,9 +191,9 @@ function copy(text,btn){
 function suche(){return st.q.trim().toLowerCase()}
 function visible(){
   var q=suche();
-  if(q)return ITEMS.filter(function(i){return(i.title+" "+klasseName(i.dir)+" "+i.kap+" "+artInfo(i.art)[2]).toLowerCase().indexOf(q)>=0});
+  if(q)return pool().filter(function(i){return(i.title+" "+klasseName(i.dir)+" "+i.kap+" "+artInfo(i.art)[2]).toLowerCase().indexOf(q)>=0});
   if(!st.k||!st.c)return[];
-  return ITEMS.filter(function(i){return i.dir===st.k&&i.kap===st.c});
+  return pool().filter(function(i){return i.dir===st.k&&i.kap===st.c});
 }
 function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function kacheln(el,werte,an,wahl){
@@ -199,6 +217,8 @@ function render(){
   if(st.k)kacheln($("fc"),kapitel(st.k).map(function(k){return[k,k,dateien(anzahl(function(i){return i.dir===st.k&&i.kap===k}))]}),st.c,function(k){
     st.c=k;store("qr_c",k);render();
   });
+  $("llk").setAttribute("aria-pressed",String(st.llk));
+  $("llk").textContent=st.llk?"Lernlandkarten ausblenden":"+ Lernlandkarten";
   var vis=visible(),list=$("list");list.innerHTML="";
   $("count").textContent=q?dateien(vis.length)+" gefunden":(st.c?dateien(vis.length)+" in "+st.c:"");
   $("selAll").style.display=$("selNone").style.display=vis.length?"":"none";
@@ -256,6 +276,11 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape")$("full").cl
 $("q").addEventListener("input",function(){st.q=this.value;render()});
 $("selAll").onclick=function(){visible().forEach(function(i){st.sel[i.path]=1});render()};
 $("selNone").onclick=function(){st.sel={};render()};
+$("llk").onclick=function(){
+  st.llk=!st.llk;store("qr_llk",st.llk?"1":"0");
+  if(!st.llk){ITEMS.forEach(function(i){if(i.art==="llk"){delete st.sel[i.path];if(st.cur===i.path)st.cur=null}})}
+  render();
+};
 render();
 })();
 </script>
