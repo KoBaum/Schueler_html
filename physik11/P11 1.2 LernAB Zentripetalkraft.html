@@ -251,7 +251,7 @@ td>span.loes{font-size:15px;line-height:1.2}
 /* Am Bildschirm die A4-Blätter auf die Fensterbreite verkleinern: Ein Blatt ist 210 mm (794 px) breit, schmale iPads im Hochformat
    haben weniger. Sonst ist die Seite breiter als der Bildschirm, und in der Kapitel-Datei (Seite im iframe) lässt iOS-Safari nicht scrollen.
    Im Druck gilt zoom:1 (CSS), dort bleibt alles exakt A4. */
-function einpassenLA(){var w=document.documentElement.clientWidth||innerWidth,z=Math.min(1,(w-16)/794);document.querySelectorAll('.seite').forEach(function(s){s.style.zoom=z<0.999?z.toFixed(3):'';});}
+function einpassenLA(){var w=document.documentElement.clientWidth||innerWidth,z=Math.min(2,(w-12)/794);document.querySelectorAll('.seite').forEach(function(s){s.style.zoom=Math.abs(z-1)>0.001?z.toFixed(3):'';});}
 einpassenLA();addEventListener('resize',einpassenLA);addEventListener('orientationchange',function(){setTimeout(einpassenLA,200);});
 /* Lücken für Handschrift (Bini, 01.10. und 12.10.2026: „konkrete Beispiele konnte bei weitem nicht in die Lücke geschrieben werden“):
    Jede Lücke, auch \leerzeile (.breit), ist so breit wie das Lösungswort in Schülerhandschrift: gemessen in der Handschrift HandUA
